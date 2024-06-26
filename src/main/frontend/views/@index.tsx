@@ -1,36 +1,51 @@
 import { ViewConfig } from '@vaadin/hilla-file-router/types.js';
-import { useSignal } from '@vaadin/hilla-react-signals';
+import { useForm } from '@vaadin/hilla-react-form';
+import {
+	HorizontalLayout,
+	NumberField,
+	VerticalLayout,
+} from '@vaadin/react-components';
 import { Button } from '@vaadin/react-components/Button.js';
-import { Notification } from '@vaadin/react-components/Notification.js';
 import { TextField } from '@vaadin/react-components/TextField.js';
-import { HelloWorldService } from 'Frontend/generated/endpoints.js';
+import UserModel from 'Frontend/generated/com/example/application/model/UserModel';
+import { UserService } from 'Frontend/generated/endpoints.js';
 
 export const config: ViewConfig = {
-  menu: { order: 0, icon: 'line-awesome/svg/globe-solid.svg' },
-  title: 'Hello Hilla',
+	menu: { order: 0, icon: 'line-awesome/svg/globe-solid.svg' },
+	title: 'Hello Hilla',
 };
 
 export default function HelloHillaView() {
-  const name = useSignal('');
+	const { model, submit, field, invalid, submitting } = useForm(UserModel, {
+		onSubmit: async (user) => {
+			await UserService.createAndRetrieveUser(user).then(() => {
+				console.log('User created with success');
+			});
+		},
+	});
 
-  return (
-    <>
-      <section className="flex p-m gap-m items-end">
-        <TextField
-          label="Your name"
-          onValueChanged={(e) => {
-            name.value = e.detail.value;
-          }}
-        />
-        <Button
-          onClick={async () => {
-            const serverResponse = await HelloWorldService.sayHello(name.value);
-            Notification.show(serverResponse);
-          }}
-        >
-          Say hello
-        </Button>
-      </section>
-    </>
-  );
+	return (
+		<>
+			<VerticalLayout theme='spacing padding'>
+				<TextField label='name' {...field(model.name)}></TextField>
+				<NumberField label='age' {...field(model.age)}></NumberField>
+			</VerticalLayout>
+			<HorizontalLayout theme='spacing padding'>
+				<Button
+					theme='primary'
+					onClick={submit}
+					disabled={invalid || submitting}>
+					Save
+				</Button>
+				<span
+					className='label'
+					style={{ visibility: submitting ? 'visible' : 'hidden' }}>
+					submitting
+				</span>
+				<div
+					className='spinner'
+					style={{ visibility: submitting ? 'visible' : 'hidden' }}></div>
+			</HorizontalLayout>
+		</>
+	);
 }
